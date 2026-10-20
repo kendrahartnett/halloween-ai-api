@@ -20,11 +20,20 @@ type QuestionComposerProps = {
 export function QuestionComposer({ question, onQuestionChange, onSubmit, onReset, inputRef, remaining, total, asking, error, hasHistory }: QuestionComposerProps) {
   return (
     <div className="composer-panel">
+      <div className="whisper-marks" aria-hidden="true">
+        {Array.from({ length: total }, (_, index) => (
+          <span key={index} className={index < total - remaining ? "is-spent" : ""} />
+        ))}
+      </div>
       <form onSubmit={onSubmit}>
         <div className="composer-heading">
           <label className="sr-only" htmlFor="question">Ask the glass a question</label>
           <span className="question-counter" aria-live="polite" aria-atomic="true">
-            {remaining} of {total} questions remain
+            {remaining === 0
+              ? "The glass has heard your final whisper."
+              : remaining === 1
+                ? "One last question. Dare to ask?"
+                : `${remaining} questions left. The glass is listening—ask again.`}
           </span>
         </div>
         <div className="composer-row">
@@ -34,7 +43,7 @@ export function QuestionComposer({ question, onQuestionChange, onSubmit, onReset
             value={question}
             onChange={(event) => onQuestionChange(event.target.value)}
             maxLength={MAX_QUESTION_CHARS}
-            placeholder="What waits beyond the candlelight?"
+            placeholder="be careful what you ask for.."
             disabled={asking || remaining === 0}
             aria-describedby="question-length"
             autoComplete="off"

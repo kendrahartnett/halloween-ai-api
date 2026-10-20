@@ -106,11 +106,11 @@ export default function Home() {
   return (
     <main className={`chamber creep-${creepiness}`}>
       <section className="experience" aria-label="The haunted mirror" inert={scareActive}>
+        <header className="title-block">
+          <h1>The Black Glass</h1>
+          <p className="subtitle">Every question comes with a price.</p>
+        </header>
         <div className="experience-controls">
-          <header className="title-block">
-            <h1>The Black Glass</h1>
-            <p className="subtitle">Every question comes with a price.</p>
-          </header>
           <QuestionComposer
             question={question}
             onQuestionChange={setQuestion}

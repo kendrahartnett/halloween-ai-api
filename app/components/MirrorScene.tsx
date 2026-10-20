@@ -19,11 +19,11 @@ export function MirrorScene({ answer, answerKey, asking, breaking, creepiness, r
     <div className={`mirror-scene creep-${creepiness}${breaking ? " is-breaking" : ""}`}>
       <Image
         className="mirror-art"
-        src="/images/haunted-mirror.png"
-        alt="An ornate Victorian mirror in a candlelit parlor"
-        width={1024}
-        height={1536}
-        sizes="(max-width: 600px) 100vw, 560px"
+        src="/images/haunted-mirror-cutout.png"
+        alt="An ornate oval Victorian mirror with cracked, smoky glass"
+        width={1536}
+        height={1024}
+        sizes="(max-width: 900px) 100vw, 60vw"
         preload
       />
       <div className="glass-content">

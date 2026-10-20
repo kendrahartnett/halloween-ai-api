@@ -1,6 +1,13 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { useReducedMotion } from "motion/react";
+import { FormEvent, useRef, useState } from "react";
+import { MirrorScene } from "./components/MirrorScene";
+import { QuestionComposer } from "./components/QuestionComposer";
+import { ScareOverlay } from "./components/ScareOverlay";
+import { useScareAudio } from "./hooks/useScareAudio";
+
+const MAX_QUESTIONS = 4;
 
 type ConversationMessage = {
   role: "user" | "model";
@@ -13,28 +20,43 @@ type MirrorResponse = {
   reveal?: boolean;
 };
 
+type ExperienceState = "idle" | "asking" | "scare-pending" | "scare";
+
 export default function Home() {
+  const reducedMotion = useReducedMotion() ?? false;
+  const { play, stop } = useScareAudio();
   const [messages, setMessages] = useState<ConversationMessage[]>([]);
   const [question, setQuestion] = useState("");
   const [creepiness, setCreepiness] = useState(1);
-  const [reveal, setReveal] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [experience, setExperience] = useState<ExperienceState>("idle");
   const [error, setError] = useState("");
+  const requestIdRef = useRef(0);
+  const questionRef = useRef<HTMLInputElement>(null);
+
+  const questionsAsked = messages.filter((message) => message.role === "user").length;
+  const questionsRemaining = Math.max(0, MAX_QUESTIONS - questionsAsked);
+  const answers = messages.filter((message) => message.role === "model");
+  const latestAnswer = answers.at(-1)?.content ?? null;
+  const asking = experience === "asking";
+  const scareActive = experience === "scare-pending" || experience === "scare";
 
   async function askMirror(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const trimmedQuestion = question.trim();
-    if (!trimmedQuestion || loading) return;
+    if (!trimmedQuestion || experience !== "idle" || questionsRemaining === 0) return;
 
     const nextMessages: ConversationMessage[] = [
       ...messages,
       { role: "user", content: trimmedQuestion },
     ];
+    const finalQuestion = questionsAsked + 1 === MAX_QUESTIONS;
+    const requestId = ++requestIdRef.current;
 
     setMessages(nextMessages);
     setQuestion("");
     setError("");
-    setLoading(true);
+    setExperience(finalQuestion ? "scare-pending" : "asking");
+    if (finalQuestion) play();
 
     try {
       const response = await fetch("/api/mirror", {
@@ -43,100 +65,78 @@ export default function Home() {
         body: JSON.stringify({ messages: nextMessages }),
       });
       const result = (await response.json()) as MirrorResponse;
+      if (requestId !== requestIdRef.current) return;
 
-      if (!response.ok) {
-        throw new Error(result.message || "The mirror refuses to answer.");
+      if (!response.ok) throw new Error(result.message || "The mirror refuses to answer.");
+
+      if (finalQuestion) {
+        if (!result.reveal) throw new Error("The glass clouds over. Please try again.");
+        setExperience("scare");
+      } else {
+        if (result.reveal || !result.message?.trim()) {
+          throw new Error("The glass clouds over. Please try again.");
+        }
+        // The response reaches the glass here; prior turns remain only in request history.
+        setMessages([...nextMessages, { role: "model", content: result.message }]);
+        setCreepiness(result.creepiness ?? 1);
+        setExperience("idle");
       }
-
-      // Result reaches the screen here by joining the visible conversation state.
-      setMessages((current) => [
-        ...current,
-        { role: "model", content: result.message },
-      ]);
-      setCreepiness(result.creepiness ?? 1);
-      setReveal(Boolean(result.reveal));
     } catch (caught) {
-      setError(
-        caught instanceof Error
-          ? caught.message
-          : "The mirror has gone dark. Please try again.",
-      );
-    } finally {
-      setLoading(false);
+      if (requestId !== requestIdRef.current) return;
+      if (finalQuestion) stop();
+      setMessages(messages);
+      setQuestion(trimmedQuestion);
+      setExperience("idle");
+      setError(caught instanceof Error ? caught.message : "The mirror has gone dark. Please try again.");
+      requestAnimationFrame(() => questionRef.current?.focus());
     }
   }
 
   function resetMirror() {
+    requestIdRef.current += 1;
+    stop();
     setMessages([]);
     setQuestion("");
     setCreepiness(1);
-    setReveal(false);
+    setExperience("idle");
     setError("");
+    requestAnimationFrame(() => questionRef.current?.focus());
   }
 
   return (
     <main className={`chamber creep-${creepiness}`}>
-      <div className="mist" aria-hidden="true" />
-      <header className="title-block">
-        <p className="eyebrow">An oracle of impossible tomorrows</p>
-        <h1>Mirror, Mirror</h1>
-        <p className="disclaimer">
-          Entertainment only. The mirror cannot see your real future.
-        </p>
-      </header>
-
-      <section className={`mirror-frame ${reveal ? "is-revealed" : ""}`}>
-        <div className="mirror-glass">
-          {reveal ? (
-            <div className="reveal" role="img" aria-label="A spooky face appears in the mirror">
-              <svg viewBox="0 0 240 300" aria-hidden="true">
-                <path className="face" d="M120 20C55 20 31 74 38 151c5 56 35 123 82 136 47-13 77-80 82-136C209 74 185 20 120 20Z" />
-                <path className="eye" d="M63 121c18-20 39-17 49 7-20 17-39 14-49-7Zm65 7c10-24 31-27 49-7-10 21-29 24-49 7Z" />
-                <path className="mouth" d="M76 205c28-22 60-22 88 0-19 49-69 49-88 0Z" />
-              </svg>
-              <p>The thing behind the glass has seen you.</p>
-              <button className="reset-button" type="button" onClick={resetMirror}>
-                Reset mirror
-              </button>
-            </div>
-          ) : (
-            <>
-              <div className="conversation" aria-live="polite">
-                {messages.length === 0 && (
-                  <p className="invitation">
-                    Ask what waits beyond the candlelight&hellip;
-                  </p>
-                )}
-                {messages.map((message, index) => (
-                  <article className={`message ${message.role}`} key={`${message.role}-${index}`}>
-                    <span>{message.role === "user" ? "Traveler" : "The mirror"}</span>
-                    <p>{message.content}</p>
-                  </article>
-                ))}
-                {loading && <p className="thinking">The silver stirs&hellip;</p>}
-              </div>
-
-              <form className="question-form" onSubmit={askMirror}>
-                <label htmlFor="question">Ask of your imaginary future</label>
-                <div className="input-row">
-                  <input
-                    id="question"
-                    value={question}
-                    onChange={(event) => setQuestion(event.target.value)}
-                    placeholder="What waits beyond the next moon?"
-                    disabled={loading}
-                    autoComplete="off"
-                  />
-                  <button type="submit" disabled={loading || !question.trim()}>
-                    {loading ? "Listening…" : "Ask the mirror"}
-                  </button>
-                </div>
-                {error && <p className="error" role="alert">{error}</p>}
-              </form>
-            </>
-          )}
+      <section className="experience" aria-label="The haunted mirror" inert={scareActive}>
+        <div className="experience-controls">
+          <header className="title-block">
+            <h1>The Black Glass</h1>
+            <p className="subtitle">Every question comes with a price.</p>
+          </header>
+          <QuestionComposer
+            question={question}
+            onQuestionChange={setQuestion}
+            onSubmit={askMirror}
+            onReset={resetMirror}
+            inputRef={questionRef}
+            remaining={questionsRemaining}
+            total={MAX_QUESTIONS}
+            asking={experience !== "idle"}
+            error={error}
+            hasHistory={messages.length > 0}
+          />
+        </div>
+        <div className="scene-stage">
+          <MirrorScene
+            answer={latestAnswer}
+            answerKey={answers.length}
+            asking={asking}
+            breaking={scareActive}
+            creepiness={creepiness}
+            reducedMotion={reducedMotion}
+          />
         </div>
       </section>
+
+      <ScareOverlay active={scareActive} reducedMotion={reducedMotion} onReset={resetMirror} />
     </main>
   );
 }

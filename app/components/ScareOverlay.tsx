@@ -40,7 +40,6 @@ export function ScareOverlay({ active, reducedMotion, onReset }: ScareOverlayPro
           : { opacity: 0, scale: reducedMotion ? 1 : 0.28 }}
         transition={{ duration: reducedMotion ? 0 : 0.3, delay: active && !reducedMotion ? 0.09 : 0, ease: [0.12, 0.9, 0.2, 1] }}
       >
-        <div className="entity-backdrop" aria-hidden="true" />
         <div className="entity-art" aria-hidden="true" />
       </motion.div>
       {active && (

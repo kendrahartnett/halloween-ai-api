@@ -69,7 +69,7 @@ button:disabled { cursor: not-allowed; }
   margin: 0 auto;
 }
 .experience-controls { display: flex; flex-direction: column; gap: 2rem; min-width: 0; align-self: start; padding-top: clamp(2.5rem, 8svh, 5rem); margin-left: clamp(2.5rem, 6vw, 7rem); margin-right: clamp(1rem, 2vw, 2rem); }
-.scene-stage { position: relative; display: flex; align-items: center; justify-content: center; min-width: 0; min-height: 0; height: 100%; }
+.scene-stage { position: relative; display: flex; align-items: center; justify-content: center; min-width: 0; min-height: 0; height: 100%; transform: translateY(-5%); }
 .scene-stage::before {
   content: "";
   position: absolute;
@@ -116,7 +116,7 @@ button:disabled { cursor: not-allowed; }
   overflow: hidden;
   border-radius: 12%;
   background: radial-gradient(ellipse, rgba(0, 0, 0, .2), transparent 75%);
-  --answer-color: #e34b4b;
+  --answer-color: #ff3038;
 }
 .creep-2 .glass-content { background: radial-gradient(ellipse, rgba(9, 5, 7, .3), transparent 75%); }
 .creep-3 .glass-content { background: radial-gradient(ellipse, rgba(12, 4, 6, .45), transparent 75%); }
@@ -215,11 +215,10 @@ button:disabled { cursor: not-allowed; }
 .reset-link { padding: .1rem 0; border: 0; background: none; color: #fff; font: 400 1rem/1.4 var(--font-metal), system-ui; text-decoration: underline; text-underline-offset: 3px; white-space: nowrap; }
 .reset-link:hover { color: white; }
 
-.scare-screen { position: fixed; z-index: 100; inset: 0; visibility: hidden; overflow: hidden; background: #050506; pointer-events: none; }
+.scare-screen { position: fixed; z-index: 100; inset: 0; visibility: hidden; overflow: hidden; background: rgba(0, 0, 0, .25); pointer-events: none; }
 .scare-screen.is-active { visibility: visible; pointer-events: auto; }
-.scare-art { position: absolute; inset: 0; transform-origin: 50% 46%; }
-.entity-backdrop, .entity-art { position: absolute; inset: 0; background-image: url("/images/mirror-entity.png"); background-repeat: no-repeat; }
-.entity-backdrop { background-size: cover; background-position: 52% 47%; filter: blur(24px) brightness(.35); transform: scale(1.1); }
+.scare-art { position: absolute; inset: 8%; transform-origin: 50% 46%; }
+.entity-art { position: absolute; inset: 0; background-image: url("/images/mirror-entity.png"); background-repeat: no-repeat; }
 .entity-art { background-size: contain; background-position: center; filter: drop-shadow(0 0 24px #000); }
 .scare-flash { position: absolute; z-index: 1; inset: 0; opacity: 0; pointer-events: none; background: radial-gradient(ellipse at center, rgba(230, 219, 203, .42), transparent 62%); }
 .is-active .scare-flash { animation: scare-glint .22s ease-out .06s both; }

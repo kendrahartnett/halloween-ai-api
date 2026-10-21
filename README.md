@@ -6,8 +6,14 @@
 
 The project was created for the Week 6 **Add a Reliable AI Feature** assignment. It demonstrates a server-controlled AI feature with secret management, input and output limits, graceful failure handling, cost awareness, and a clear separation between browser and server responsibilities.
 
+## Experience preview
+
 <p align="center">
-  <img src="./public/images/haunted-mirror.png" alt="An ornate haunted Victorian mirror surrounded by candles" width="420" />
+  <img src="./public/images/readme/black-glass-start.png" alt="The Black Glass opening screen with its haunted mirror and question form" width="900" />
+</p>
+
+<p align="center">
+  <img src="./public/images/readme/black-glass-riddle.png" alt="The Black Glass displaying a bright-red AI-generated riddle inside the mirror" width="900" />
 </p>
 
 ## Features

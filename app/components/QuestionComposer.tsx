@@ -31,7 +31,7 @@ export function QuestionComposer({ question, onQuestionChange, onSubmit, onReset
           <span className="question-counter" aria-live="polite" aria-atomic="true">
             {remaining} Questions Remain.
             <br />
-            The Glass is Ready to Reveal your Desires
+            <span className="question-invitation">The Glass is Ready to Reveal your Desires</span>
           </span>
         </div>
         <div className="composer-row">

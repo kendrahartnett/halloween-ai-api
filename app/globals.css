@@ -242,8 +242,14 @@ button:disabled { cursor: not-allowed; }
 
 @media (max-width: 600px) {
   .chamber { padding: 1rem .75rem 2rem; }
+  .question-invitation { font-size: min(.85rem, 3.1vw); letter-spacing: 0; white-space: nowrap; }
   .title-block h1 { font-size: clamp(1.45rem, 6.5vw, 2.55rem); }
-  .mirror-response-scroll { padding: 14% 8% 10%; }
+  /* Stretch the frame and glass together, leaving readable room for phone responses. */
+  .mirror-scene { aspect-ratio: 1 / 1; }
+  .mirror-art { height: 100%; object-fit: fill; }
+  .mirror-response-scroll { padding: 4% 3%; align-items: flex-start; }
+  .mirror-answer { flex-shrink: 0; }
+  .answer-lines { gap: .45em; }
   .answer-line { font-size: clamp(.72rem, 2.8vw, .91rem); }
   .composer-panel { padding: 1rem; }
   .composer-row button { min-height: 45px; }

@@ -29,11 +29,9 @@ export function QuestionComposer({ question, onQuestionChange, onSubmit, onReset
         <div className="composer-heading">
           <label className="sr-only" htmlFor="question">Ask the glass a question</label>
           <span className="question-counter" aria-live="polite" aria-atomic="true">
-            {remaining === 0
-              ? "The glass has heard your final whisper."
-              : remaining === 1
-                ? "One last question. Dare to ask?"
-                : `${remaining} questions left. The glass is listening—ask again.`}
+            {remaining} Questions Remain.
+            <br />
+            The Glass is Ready to Reveal your Desires
           </span>
         </div>
         <div className="composer-row">
@@ -43,13 +41,13 @@ export function QuestionComposer({ question, onQuestionChange, onSubmit, onReset
             value={question}
             onChange={(event) => onQuestionChange(event.target.value)}
             maxLength={MAX_QUESTION_CHARS}
-            placeholder="be careful what you ask for.."
+            placeholder="Be careful what you wish for.."
             disabled={asking || remaining === 0}
             aria-describedby="question-length"
             autoComplete="off"
           />
           <button type="submit" disabled={asking || remaining === 0 || !question.trim()}>
-            {asking ? "Listening…" : "Ask the glass"}
+            {asking ? "Listening…" : "ENTER IF YOU DARE!"}
           </button>
         </div>
         <div className="composer-foot">
@@ -63,7 +61,7 @@ export function QuestionComposer({ question, onQuestionChange, onSubmit, onReset
         {error && <p className="form-error" role="alert">{error}</p>}
       </form>
       <div className="below-composer">
-        <p className="disclaimer">Entertainment only. The mirror cannot see your real future.</p>
+        <p className="disclaimer">Riddles are AI-generated for entertainment only. The mirror cannot see your real future.</p>
         {hasHistory && (
           <button className="reset-link" type="button" onClick={onReset}>
             Start over

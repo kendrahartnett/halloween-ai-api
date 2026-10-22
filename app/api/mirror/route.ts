@@ -11,6 +11,48 @@ const MAX_MESSAGES = 12;
 const MAX_OUTPUT_TOKENS = 80;
 const AI_TIMEOUT_MS = 10000;
 const RETRY_DELAY_MS = 2000;
+const SERVER_RETRY_DELAY_MS = 1000;
+const MAX_REPLY_CHARS = 250;
+const MAX_REPLY_LINES = 3;
+
+const FALLBACK_RIDDLES = [
+  "The candle bends where no wind blows,\nAnd one dim path beneath it grows.",
+  "A shadow waits beyond the frame,\nIt knows your step, but not your name.",
+  "The silver darkens, still and deep,\nWhile borrowed echoes wake from sleep.",
+  "Four quiet knocks disturb the glass,\nThen even faithful reflections pass.",
+];
+
+type GuardReason = "invalid_json" | "empty" | "too_long" | "too_many_lines";
+
+function guardReply(text: string, creepiness: number): {
+  message: string;
+  guarded: boolean;
+  reason: GuardReason | null;
+} {
+  const fallback = FALLBACK_RIDDLES[(Math.max(1, creepiness) - 1) % FALLBACK_RIDDLES.length];
+  let parsed: unknown;
+
+  try {
+    parsed = JSON.parse(text);
+  } catch {
+    return { message: fallback, guarded: true, reason: "invalid_json" };
+  }
+
+  if (!parsed || typeof parsed !== "object" || typeof (parsed as { message?: unknown }).message !== "string") {
+    return { message: fallback, guarded: true, reason: "empty" };
+  }
+
+  const message = (parsed as { message: string }).message.trim();
+  if (!message) return { message: fallback, guarded: true, reason: "empty" };
+  if (message.length > MAX_REPLY_CHARS) {
+    return { message: fallback, guarded: true, reason: "too_long" };
+  }
+  if (message.split(/\r?\n/).length > MAX_REPLY_LINES) {
+    return { message: fallback, guarded: true, reason: "too_many_lines" };
+  }
+
+  return { message, guarded: false, reason: null };
+}
 
 type MirrorMessage = {
   role: "user" | "model";
@@ -101,7 +143,7 @@ export async function POST(request: Request) {
 
     // The fourth question triggers the reveal in code, without an AI call or answer.
     if (userTurns === 4) {
-      return NextResponse.json({ message: "", creepiness: 4, reveal: true });
+      return NextResponse.json({ message: "", creepiness: 4, reveal: true, guarded: false });
     }
 
     const apiKey = process.env.GEMINI_API_KEY;
@@ -124,13 +166,36 @@ export async function POST(request: Request) {
     }));
 
     const ai = new GoogleGenAI({ apiKey });
-    const simulateRateLimit =
-      process.env.NODE_ENV !== "production" &&
-      request.headers.get("x-simulate-error") === "429";
+    const simulatedError =
+      process.env.NODE_ENV !== "production"
+        ? request.headers.get("x-simulate-error")
+        : null;
+    const simulatedOutput =
+      process.env.NODE_ENV !== "production"
+        ? request.headers.get("x-simulate-output")
+        : null;
 
     const generateResponse = async () => {
-      if (simulateRateLimit) {
+      if (simulatedOutput === "invalid") {
+        return { text: '{"message":"The glass breaks', usageMetadata: undefined };
+      }
+      if (simulatedOutput === "empty") {
+        return { text: '{"message":""}', usageMetadata: undefined };
+      }
+      if (simulatedOutput === "long") {
+        return {
+          text: JSON.stringify({ message: "A".repeat(MAX_REPLY_CHARS + 1) }),
+          usageMetadata: undefined,
+        };
+      }
+
+      if (simulatedError === "429") {
         throw Object.assign(new Error("RESOURCE_EXHAUSTED"), { status: 429 });
+      }
+      if (simulatedError === "500" || simulatedError === "503") {
+        throw Object.assign(new Error(`Simulated ${simulatedError}`), {
+          status: Number(simulatedError),
+        });
       }
 
       // AI call: this executes only in the server route; the key never reaches the browser.
@@ -162,10 +227,14 @@ export async function POST(request: Request) {
     } catch (error) {
       const rateLimited = isRateLimitError(error);
       const timedOut = isTimeoutError(error);
-      if (!rateLimited && !timedOut) throw error;
+      const { status } = getErrorDetails(error);
+      const serverFailed = status === 500 || status === 503;
+      if (!rateLimited && !timedOut && !serverFailed) throw error;
 
       if (rateLimited) {
         await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY_MS));
+      } else if (serverFailed) {
+        await new Promise((resolve) => setTimeout(resolve, SERVER_RETRY_DELAY_MS));
       }
       try {
         response = await generateResponse();
@@ -199,19 +268,20 @@ export async function POST(request: Request) {
       })}`,
     );
 
-    const text = response.text?.trim() || "The glass clouds over in silence.";
-    let message = text;
-
-    try {
-      const parsed = JSON.parse(text) as { message?: unknown };
-      if (typeof parsed.message === "string" && parsed.message.trim()) {
-        message = parsed.message;
-      }
-    } catch {
-      // Plain text is a safe fallback if the model does not return valid JSON.
+    const guardedReply = guardReply(response.text?.trim() ?? "", creepiness);
+    if (guardedReply.guarded) {
+      console.warn(
+        `Mirror reply guarded ${JSON.stringify({ reason: guardedReply.reason, turn: userTurns })}`,
+      );
     }
 
-    return NextResponse.json({ message, creepiness, reveal, usage });
+    return NextResponse.json({
+      message: guardedReply.message,
+      creepiness,
+      reveal,
+      usage,
+      guarded: guardedReply.guarded,
+    });
   } catch (error) {
     const { message, status } = getErrorDetails(error);
     console.error("Mirror API error:", { message, status });

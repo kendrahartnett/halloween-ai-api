@@ -161,9 +161,9 @@ button:disabled { cursor: not-allowed; }
 }
 
 .composer-panel {
-  transform: translateY(-15%);
+  transform: translate(5%, -15%);
   position: relative;
-  width: 100%;
+  width: 105%;
   margin: 0;
   padding: 1.6rem 1.4rem 1.2rem;
   border: 0;
@@ -176,7 +176,7 @@ button:disabled { cursor: not-allowed; }
 .whisper-marks .is-spent { opacity: .2; }
 .composer-heading { display: flex; align-items: baseline; justify-content: space-between; gap: .5rem 1rem; flex-wrap: wrap; margin-bottom: .7rem; }
 .composer-heading label { color: var(--ivory); font: 600 .8rem/1.4 Arial, sans-serif; letter-spacing: .04em; }
-.question-counter { color: #fff; text-shadow: 0 2px 4px #000; font: 400 1.05rem/1.4 var(--font-metal), system-ui; letter-spacing: .04em; }
+.question-counter { color: #fff; text-shadow: 0 2px 4px #000; font: 400 1.05rem/1.4 var(--font-metal), system-ui; letter-spacing: .04em; white-space: nowrap; }
 .composer-row { display: flex; flex-direction: column; gap: .55rem; }
 .composer-row input {
   flex: 1;
@@ -230,12 +230,13 @@ button:disabled { cursor: not-allowed; }
 
 @media (max-width: 900px) {
   /* Keep the stacked form clear of the mirror on smaller screens. */
-  .composer-panel { transform: none; }
+  .composer-panel { width: 100%; transform: none; }
   .experience { grid-template-columns: 1fr; grid-template-rows: auto; gap: 1rem; height: auto; min-height: 0; }
   .experience-controls { grid-row: 3; width: min(100%, 520px); margin: 0 auto; padding-top: 0; }
   .experience-controls { gap: 1rem; }
   .title-block { text-align: center; }
-  .scene-stage { width: 100%; height: auto; overflow: visible; }
+  .scene-stage { width: 100%; height: auto; overflow: visible; transform: none; }
+  .question-counter { white-space: normal; }
   .mirror-scene { width: min(100%, 780px); }
 }
 
